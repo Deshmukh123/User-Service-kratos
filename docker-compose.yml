@@ -1,0 +1,31 @@
+version: '3.7'
+
+services:
+  user-service:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kratos
+
+  kratos:
+    image: oryd/kratos:v1.1.0
+    ports:
+      - "4433:4433"
+      - "4434:4434"
+    volumes:
+      - ./kratos:/etc/config/kratos
+    command: serve -c /etc/config/kratos/kratos.yml
+    environment:
+      - DSN=postgres://postgres:postgres@postgres:5432/kratos?sslmode=disable
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: kratos
