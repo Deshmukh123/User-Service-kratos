@@ -1,4 +1,4 @@
-dsn: postgres://kratos:kratos@postgres:5432/kratos?sslmode=disable
+dsn: postgres://postgres:postgres@postgres:5432/kratos?sslmode=disable
 
 serve:
   public:
@@ -14,10 +14,10 @@ identity:
   default_schema_id: default
   schemas:
     - id: default
-      url: file:///etc/config/identities.schema.json
+      url: file:///etc/config/kratos/identities.schema.json
 
 selfservice:
-  default_browser_return_url: http://localhost:8080/me
+  default_browser_return_url: http://localhost:8081/me
   flows:
     login:
       ui_url: http://localhost:3000/login
@@ -43,7 +43,8 @@ log:
 
 courier:
   smtp:
-    connection_uri: smtps://user:pass@mail.example.com:465
+    connection_uri: "smtp://user:pass@localhost:1025/?disable_starttls=true"
+    from_name: "Ory Kratos"
 
 secrets:
   default:

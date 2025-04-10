@@ -2,11 +2,26 @@ version: '3.7'
 
 services:
   user-service:
-    build: .
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8081:8081"
     depends_on:
-      - kratos
+      kratos:
+        condition: service_healthy
+
+  kratos-migrate:
+    image: oryd/kratos:v1.1.0
+    environment:
+      - DSN=postgres://postgres:postgres@postgres:5432/kratos?sslmode=disable
+    volumes:
+      - ./kratos:/etc/config/kratos
+    command: migrate sql -e --yes -c /etc/config/kratos/kratos.yml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
 
   kratos:
     image: oryd/kratos:v1.1.0
@@ -19,13 +34,33 @@ services:
     environment:
       - DSN=postgres://postgres:postgres@postgres:5432/kratos?sslmode=disable
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      kratos-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4434/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   postgres:
     image: postgres:15
     ports:
-      - "5432:5432"
+      - "5435:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: kratos
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:  
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  postgres_data:
+    
